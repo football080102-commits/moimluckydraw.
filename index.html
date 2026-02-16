@@ -9,7 +9,6 @@
         :root {
             --primary-blue: #00d2ff;
             --deep-blue: #0045ff;
-            --gold: #ffd700;
             --dark-bg: #030816;
         }
 
@@ -20,56 +19,36 @@
             margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; height: 100vh;
         }
 
-        /* 배경 미세 움직임 추가 */
-        body::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://www.transparenttextures.com/patterns/stardust.png');
-            opacity: 0.15; pointer-events: none;
-        }
+        .top-ui { position: absolute; top: 20px; width: 92%; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .main-title { position: absolute; top: 8%; font-size: 2.8rem; font-weight: 800; text-shadow: 0 0 15px var(--primary-blue); transition: opacity 0.5s; }
 
-        .top-ui {
-            position: absolute; top: 20px; width: 92%; display: flex; justify-content: space-between; align-items: center; z-index: 100;
-        }
-
-        .main-title {
-            position: absolute; top: 8%; font-size: 2.8rem; font-weight: 800;
-            color: white; text-shadow: 0 0 15px var(--primary-blue); text-align: center; width: 100%; transition: opacity 0.5s;
-        }
-
-        #main-stage {
-            position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 12vh;
-        }
+        #main-stage { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 15vh; }
 
         #box {
-            font-size: 140px; filter: drop-shadow(0 0 25px var(--deep-blue));
-            cursor: pointer; z-index: 50;
-            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s; 
+            font-size: 150px; cursor: pointer; z-index: 50;
+            filter: drop-shadow(0 0 20px var(--deep-blue));
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; 
         }
 
         #popup-text {
-            position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 8rem; font-weight: 900; color: white; text-shadow: 0 0 40px var(--primary-blue); opacity: 0; z-index: 5;
+            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 9rem; font-weight: 900; color: white; text-shadow: 0 0 40px var(--primary-blue); opacity: 0; z-index: 5;
         }
 
         #result-card {
             display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            width: 450px; height: 600px; background: linear-gradient(145deg, #001f4d, #000);
+            width: 480px; height: 580px; background: linear-gradient(145deg, #001f4d, #000);
             border: 3px solid var(--primary-blue); border-radius: 40px; box-shadow: 0 0 100px rgba(0, 210, 255, 0.6); z-index: 1000;
             flex-direction: column; justify-content: center; align-items: center;
         }
 
-        #res-name { font-size: 5rem; font-weight: 900; color: white; margin: 20px 0; text-shadow: 0 0 20px var(--primary-blue); }
-
-        #flash { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: white; opacity: 0; pointer-events: none; z-index: 1500; 
-        }
-
-        .btn-main { background: var(--deep-blue); color: white; border: none; padding: 15px 45px; font-size: 1.4rem; border-radius: 50px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
-        .btn-main:hover { transform: scale(1.05); background: var(--primary-blue); color: black; }
+        #res-name { font-size: 5.5rem; font-weight: 900; color: white; margin: 20px 0; text-shadow: 0 0 20px var(--primary-blue); }
+        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 1500; }
+        .btn-main { background: var(--deep-blue); color: white; border: none; padding: 15px 50px; font-size: 1.5rem; border-radius: 50px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
+        .btn-main:hover { transform: scale(1.1); background: var(--primary-blue); color: black; }
 
         @keyframes shake {
-            0% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } 100% { transform: rotate(0deg); }
+            0% { transform: rotate(0deg); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } 100% { transform: rotate(0deg); }
         }
     </style>
 </head>
@@ -79,25 +58,26 @@
 <div class="main-title" id="title-text">교제의 밤 행운권 추첨</div>
 
 <div class="top-ui">
-    <button onclick="resetData()" style="background:none; border:none; color:#555; cursor:pointer;">초기화</button>
-    <div id="counter" style="color:var(--primary-blue); font-weight:bold; font-size:1.2rem;">대기: 0명</div>
+    <button onclick="resetData()" style="background:none; border:none; color:#444; cursor:pointer;">데이터 초기화</button>
+    <div id="counter" style="color:var(--primary-blue); font-weight:bold; font-size:1.4rem;">대기: 0명</div>
 </div>
 
 <div id="main-stage">
     <div id="popup-text"></div>
     <div id="box" onclick="startDraw()">🎁</div>
-    <button class="btn-main" id="open-btn" onclick="startDraw()">추첨하기</button>
+    <button class="btn-main" id="open-btn" onclick="startDraw()">추첨 시작!</button>
 
     <div id="result-card">
-        <div id="res-unit" style="color:var(--primary-blue); font-size: 1.6rem;"></div>
-        <div id="res-grade" style="margin:15px 0; font-size: 2rem;"></div>
+        <div id="res-unit" style="color:var(--primary-blue); font-size: 1.8rem;"></div>
+        <div id="res-grade" style="margin:15px 0; font-size: 2.2rem;"></div>
         <div id="res-name"></div>
-        <div style="font-size:1.4rem; color:#aaa; margin-top: 10px;">당첨을 축하합니다!</div>
-        <button onclick="closeResult()" class="btn-main" style="font-size:1.2rem; padding:10px 40px;">확인</button>
+        <div style="font-size:1.5rem; color:#aaa; margin-top: 15px;">당첨을 축하합니다!</div>
+        <button onclick="closeResult()" class="btn-main" style="font-size:1.3rem; padding:12px 45px;">닫기</button>
     </div>
 </div>
 
 <script>
+    // ★★★ 아래 [ ] 사이에 새로운 명단을 복사해서 넣으세요 ★★★
     const rawData = [
         { "grade": 6, "class": 1, "name": "김지성" }, { "grade": 4, "class": 1, "name": "김승하" }, { "grade": 4, "class": 1, "name": "김유하" }, { "grade": 4, "class": 1, "name": "박효진" },
         { "grade": 3, "class": 1, "name": "김단비" }, { "grade": 3, "class": 1, "name": "김태건" }, { "grade": 3, "class": 1, "name": "정윤서" }, { "grade": 2, "class": 1, "name": "김윤서" },
@@ -117,8 +97,8 @@
     ];
 
     let participants = [...rawData];
-    const sndDrum = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    const sndFirework = new Audio('https://assets.mixkit.co/active_storage/sfx/1500/1500-preview.mp3');
+    const sndDrum = new Audio('drum.mp3');
+    const sndFanfare = new Audio('fanfare.mp3');
 
     function getGradeName(g) { return g <= 3 ? `중${g}` : `고${g-3}`; }
     function updateCounter() { document.getElementById('counter').innerText = `대기: ${participants.length}명`; }
@@ -128,7 +108,6 @@
         if (participants.length === 0) return alert("추첨 완료!");
         if (document.getElementById('result-card').style.display === 'flex') return;
 
-        // 사운드 시작
         sndDrum.loop = true;
         sndDrum.currentTime = 0;
         sndDrum.play();
@@ -137,46 +116,43 @@
         document.getElementById('title-text').style.opacity = '0.2';
 
         const winner = participants.splice(Math.floor(Math.random() * participants.length), 1)[0];
-        
         const box = document.getElementById('box');
-        box.style.animation = "shake 0.3s infinite"; 
+        
+        box.style.animation = "shake 0.25s infinite"; 
 
-        // 시간 단축 (총 약 6초 소요)
-        setTimeout(() => showStep(`${winner.class}분임`), 800);
-        setTimeout(() => showStep(getGradeName(winner.grade)), 2600);
+        setTimeout(() => showStep(`${winner.class}분임`), 700);
+        setTimeout(() => showStep(getGradeName(winner.grade)), 2000);
 
         setTimeout(() => {
             box.style.animation = "none"; 
             setTimeout(() => {
-                box.style.transform = "translateY(-15vh) scale(2.2)"; 
+                box.style.transform = "translateY(-10vh) scale(2.0)"; 
                 
                 setTimeout(() => {
                     const flash = document.getElementById('flash');
                     flash.style.opacity = "1"; 
                     
-                    // 사운드 교체
                     sndDrum.pause();
-                    sndFirework.currentTime = 0;
-                    sndFirework.play();
+                    sndFanfare.play();
 
                     setTimeout(() => {
                         flash.style.opacity = "0";
                         box.style.opacity = "0";
                         showResult(winner);
-                    }, 300);
-                }, 1500); 
+                    }, 200);
+                }, 1000); 
             }, 50);
-        }, 4200);
+        }, 3200);
     }
 
     function showStep(text) {
         const el = document.getElementById('popup-text');
         el.innerText = text;
         el.animate([
-            {transform:'translate(-50%, 20%)', opacity:0}, 
+            {transform:'translate(-50%, 30%)', opacity:0}, 
             {transform:'translate(-50%, -50%)', opacity:1, offset:0.2}, 
-            {transform:'translate(-50%, -120%)', opacity:0}
-        ], {duration: 2000, fill: 'forwards'});
+            {transform:'translate(-50%, -130%)', opacity:0}
+        ], {duration: 1600, fill: 'forwards'});
     }
 
     function showResult(winner) {
@@ -186,9 +162,8 @@
         document.getElementById('res-name').innerText = winner.name;
         card.style.display = 'flex';
         
-        // 양옆 쌍폭죽 연출
-        confetti({ particleCount: 150, angle: 60, spread: 70, origin: { x: 0, y: 0.8 } });
-        confetti({ particleCount: 150, angle: 120, spread: 70, origin: { x: 1, y: 0.8 } });
+        confetti({ particleCount: 180, angle: 60, spread: 80, origin: { x: 0, y: 0.8 } });
+        confetti({ particleCount: 180, angle: 120, spread: 80, origin: { x: 1, y: 0.8 } });
     }
 
     function closeResult() {
@@ -201,7 +176,7 @@
         updateCounter();
     }
 
-    function resetData() { if(confirm("모든 데이터를 초기화할까요?")) location.reload(); }
+    function resetData() { if(confirm("초기화하시겠습니까?")) location.reload(); }
 </script>
 </body>
 </html>
