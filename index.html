@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Lucky Draw v2</title>
+    <title>교제의 밤 행운권 추첨</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --primary-blue: #00d2ff;
             --deep-blue: #0045ff;
+            --gold: #ffd700;
             --dark-bg: #030816;
         }
 
@@ -25,164 +26,116 @@
             height: 100vh;
         }
 
-        /* 상단 레이아웃 */
+        /* 상단 UI 복구 */
         .top-ui {
-            position: absolute;
-            top: 30px;
-            width: 90%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
+            position: absolute; top: 20px; width: 92%;
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
         }
 
-        .btn-sub {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #aaa;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
+        .main-title {
+            position: absolute; top: 8%;
+            font-size: 2.8rem; font-weight: 800;
+            color: white; text-shadow: 0 0 15px var(--primary-blue);
+            text-align: center; width: 100%; transition: opacity 1s;
         }
 
-        /* 메인 상자 배치 (중앙보다 약간 위) */
         #main-stage {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* 중앙 배치 후 margin으로 조절 */
-            align-items: center;
-            width: 100%;
-            margin-top: -50px; 
+            position: relative; width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            justify-content: flex-end; align-items: center;
+            padding-bottom: 12vh; /* 상자 하단 배치 */
         }
 
-        #box-container {
-            position: relative;
-            margin-bottom: 40px;
-        }
-
+        /* 상자: 점점 커지는 애니메이션 (회전 제거) */
         #box {
-            font-size: 180px; /* 크기 키움 */
-            filter: drop-shadow(0 0 30px var(--deep-blue));
-            cursor: pointer;
-            transition: all 1.5s cubic-bezier(0.19, 1, 0.22, 1);
+            font-size: 140px; filter: drop-shadow(0 0 25px var(--deep-blue));
+            cursor: pointer; z-index: 50;
+            transition: transform 2s ease-out, opacity 0.5s; /* 2초 동안 부드럽게 변화 */
         }
 
-        /* 단계별 텍스트 애니메이션 (슬로우) */
         #popup-text {
-            position: absolute;
-            top: 45%;
-            left: 50%;
+            position: absolute; top: 42%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 90px;
-            font-weight: 900;
-            color: var(--primary-blue);
-            text-shadow: 0 0 20px var(--deep-blue), 0 0 40px white;
-            opacity: 0;
-            pointer-events: none;
+            font-size: 6rem; font-weight: 900;
+            color: white; text-shadow: 0 0 30px var(--primary-blue);
+            opacity: 0; pointer-events: none; z-index: 5;
         }
 
-        /* 분위기 반전용 오버레이 (부분 암전/명전) */
-        #ambience {
-            position: fixed;
-            top:0; left:0; width:100%; height:100%;
-            background: white;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 999;
-            transition: opacity 0.8s ease;
-        }
-
-        /* 결과 카드 디자인 */
+        /* 결과 카드 */
         #result-card {
-            display: none;
-            position: absolute;
-            top: 50%; left: 50%;
+            display: none; position: absolute; top: 45%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 350px;
-            height: 500px;
+            width: 400px; height: 550px;
             background: linear-gradient(145deg, #001f4d, #000);
-            border: 3px solid var(--primary-blue);
-            border-radius: 30px;
-            box-shadow: 0 0 100px rgba(0, 210, 255, 0.4);
-            z-index: 1000;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            animation: cardEmerge 1.2s ease-out;
+            border: 2px solid var(--primary-blue); border-radius: 40px;
+            box-shadow: 0 0 100px rgba(0, 210, 255, 0.6);
+            z-index: 1000; flex-direction: column; justify-content: center; align-items: center;
         }
 
-        /* 애니메이션 정의 */
-        @keyframes cardEmerge {
-            0% { transform: translate(-50%, -50%) scale(0.5) rotateY(90deg); opacity: 0; }
-            100% { transform: translate(-50%, -50%) scale(1) rotateY(0deg); opacity: 1; }
-        }
+        #res-name { font-size: 4rem; font-weight: 900; color: white; margin: 20px 0; }
 
-        @keyframes slowUp {
-            0% { transform: translate(-50%, 50%); opacity: 0; filter: blur(10px); }
-            30% { transform: translate(-50%, -50%); opacity: 1; filter: blur(0); }
-            70% { transform: translate(-50%, -50%); opacity: 1; }
-            100% { transform: translate(-50%, -150%); opacity: 0; }
-        }
-
-        .open-btn {
-            background: linear-gradient(to right, #0052ff, #00d2ff);
-            border: none;
-            padding: 20px 80px;
-            font-size: 28px;
-            font-weight: bold;
-            border-radius: 100px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(0, 82, 255, 0.4);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        /* 포토부스 */
+        /* 포토부스 UI 복구 */
         #photo-booth {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 2000;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; flex-direction: row;
         }
-        .photo-slot { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-right: 1px solid #111; }
+        .photo-slot { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-right: 1px solid #222; }
+        
+        .garland-modern {
+            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+            width: 80%; display: flex; justify-content: center; align-items: center;
+            gap: 30px; border-top: 1px solid var(--primary-blue); border-bottom: 1px solid var(--primary-blue);
+            padding: 20px 0; background: rgba(0, 210, 255, 0.05);
+        }
+
+        #flash { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: radial-gradient(circle, white 0%, transparent 70%); 
+            opacity: 0; pointer-events: none; z-index: 1500; 
+        }
+
+        .btn-main {
+            background: var(--deep-blue); color: white; border: none; padding: 15px 45px;
+            font-size: 1.4rem; border-radius: 50px; cursor: pointer; margin-top: 25px;
+        }
     </style>
 </head>
 <body>
 
-<div id="ambience"></div>
+<div id="flash"></div>
+<div class="main-title" id="title-text">교제의 밤 행운권 추첨</div>
 
 <div class="top-ui">
-    <button class="btn-sub" onclick="resetData()">RESET</button>
-    <div id="counter" style="color: var(--primary-blue); font-weight: bold;">남은 인원: 0명</div>
-    <button id="booth-btn" style="display:none; background: #00d2ff; color: #000; font-weight: bold; border:none; padding:10px 20px; border-radius:5px;" onclick="showPhotoBooth()">📸 PHOTO BOOTH</button>
+    <button onclick="resetData()" style="background:none; border:none; color:#555; cursor:pointer;">초기화</button>
+    <div id="counter" style="color:var(--primary-blue); font-weight:bold; font-size:1.2rem;">대기: 0명</div>
+    <button id="booth-btn" style="display:none; background:var(--primary-blue); color:black; border:none; border-radius:5px; font-weight:bold; padding:10px 20px; cursor:pointer;" onclick="showPhotoBooth()">📸 포토부스</button>
 </div>
 
 <div id="main-stage">
-    <div id="box-container">
-        <div id="box" onclick="startDraw()">🎁</div>
-        <div id="popup-text"></div>
-    </div>
-    <button class="open-btn" id="open-btn" onclick="startDraw()">OPEN PACK</button>
+    <div id="popup-text"></div>
+    <div id="box" onclick="startDraw()">🎁</div>
+    <button class="btn-main" id="open-btn" onclick="startDraw()">추첨하기</button>
 
     <div id="result-card">
-        <div id="res-unit" style="color: var(--primary-blue); font-size: 20px;"></div>
-        <div id="res-grade" style="font-size: 28px; margin: 10px 0;"></div>
-        <div id="res-name" style="font-size: 70px; font-weight: 900; text-shadow: 0 0 20px var(--primary-blue);"></div>
-        <div style="margin-top: 40px; letter-spacing: 5px; color: #aaa;">CONGRATULATIONS</div>
-        <button onclick="closeResult()" style="margin-top: 40px; background: none; border: 1px solid #555; color: #555;">NEXT DRAW</button>
+        <div id="res-unit" style="color:var(--primary-blue); font-size: 1.4rem;"></div>
+        <div id="res-grade" style="margin:15px 0; font-size: 1.8rem;"></div>
+        <div id="res-name"></div>
+        <div style="font-size:1.3rem; color:#aaa; margin-top: 10px;">당첨을 축하합니다!</div>
+        <button onclick="closeResult()" class="btn-main" style="font-size:1.1rem; padding:10px 30px;">확인</button>
     </div>
 </div>
 
-<div id="photo-booth" onclick="hidePhotoBooth()" style="display:none; flex-direction: row;">
+<div id="photo-booth">
+    <div class="garland-modern">
+        <span>✨</span><div style="font-size:2.5rem; font-weight:800; letter-spacing:15px; color:var(--primary-blue);">축하합니다</div><span>✨</span>
+    </div>
     <div class="photo-slot" id="slot-0"></div>
     <div class="photo-slot" id="slot-1"></div>
     <div class="photo-slot" id="slot-2"></div>
+    <button onclick="hidePhotoBooth()" class="btn-main" style="position:absolute; bottom:60px; left:50%; transform:translateX(-50%); background:white; color:black; font-weight:bold;">돌아가기</button>
 </div>
 
 <script>
-    // JSON 데이터 (학년 변환 로직 포함)
     const rawData = [
         { "grade": 6, "class": 1, "name": "김지성" }, { "grade": 4, "class": 1, "name": "김승하" }, { "grade": 4, "class": 1, "name": "김유하" }, { "grade": 4, "class": 1, "name": "박효진" },
         { "grade": 3, "class": 1, "name": "김단비" }, { "grade": 3, "class": 1, "name": "김태건" }, { "grade": 3, "class": 1, "name": "정윤서" }, { "grade": 2, "class": 1, "name": "김윤서" },
@@ -204,124 +157,89 @@
     let participants = [...rawData];
     let history = [];
 
-    function getGradeName(g) {
-        return g <= 3 ? `중학교 ${g}학년` : `고등학교 ${g-3}학년`;
-    }
-
-    function updateCounter() {
-        document.getElementById('counter').innerText = `READY: ${participants.length}`;
-    }
+    function getGradeName(g) { return g <= 3 ? `중${g}` : `고${g-3}`; }
+    function updateCounter() { document.getElementById('counter').innerText = `대기: ${participants.length}명`; }
     updateCounter();
 
     function startDraw() {
-        if (participants.length === 0) return;
-        
-        const openBtn = document.getElementById('open-btn');
-        openBtn.style.visibility = 'hidden';
+        if (participants.length === 0) return alert("추첨 인원이 없습니다!");
+        document.getElementById('open-btn').style.visibility = 'hidden';
+        document.getElementById('title-text').style.opacity = '0.2';
 
-        const winnerIdx = Math.floor(Math.random() * participants.length);
-        const winner = participants.splice(winnerIdx, 1)[0];
+        const winner = participants.splice(Math.floor(Math.random() * participants.length), 1)[0];
         history.push(winner);
         updateCounter();
 
         const box = document.getElementById('box');
-        const ambience = document.getElementById('ambience');
+        box.style.animation = "shake 0.4s infinite"; 
 
-        // 연출 시작
-        box.style.animation = "shake 0.3s infinite";
-        
-        // 1단계: 분임 (2초 뒤)
-        setTimeout(() => showText(`${winner.class} 분임`), 1000);
-        
-        // 2단계: 학년 (4초 뒤 - 더 느리게)
-        setTimeout(() => showText(getGradeName(winner.grade)), 3000);
+        setTimeout(() => showStep(`${winner.class}분임`), 1200);
+        setTimeout(() => showStep(getGradeName(winner.grade)), 3800);
 
-        // 3단계: 피날레 빌드업
+        // 상자 피날레: 2초 동안 점진적으로 1/5 크기(scale 2.0)로 커짐
         setTimeout(() => {
-            box.style.transform = "scale(4)";
-            ambience.style.opacity = "0.7"; // 화면이 점점 밝아짐
+            box.style.animation = "none";
+            box.style.transform = "translateY(-15vh) scale(2.0)"; // 점진적으로 커짐
             
             setTimeout(() => {
-                ambience.style.background = "white";
-                ambience.style.opacity = "1"; // 순간 섬광
-                
+                const flash = document.getElementById('flash');
+                flash.style.opacity = "1"; 
                 setTimeout(() => {
-                    ambience.style.opacity = "0";
+                    flash.style.opacity = "0";
                     box.style.opacity = "0";
-                    showResultCard(winner);
+                    showResult(winner);
                 }, 400);
-            }, 1500);
-        }, 5000);
+            }, 2000); // 2초 대기 후 섬광
+        }, 5500);
     }
 
-    function showText(txt) {
+    function showStep(text) {
         const el = document.getElementById('popup-text');
-        el.innerText = txt;
-        el.style.animation = 'none';
-        void el.offsetWidth;
-        el.style.animation = 'slowUp 2s forwards';
+        el.innerText = text;
+        el.animate([{transform:'translate(-50%, 40%)', opacity:0}, {transform:'translate(-50%, -50%)', opacity:1, offset:0.3}, {transform:'translate(-50%, -140%)', opacity:0}], {duration: 2500, fill: 'forwards'});
     }
 
-    function showResultCard(winner) {
+    function showResult(winner) {
         const card = document.getElementById('result-card');
-        document.getElementById('res-unit').innerText = `${winner.class} UNIT`;
+        document.getElementById('res-unit').innerText = `${winner.class}분임`;
         document.getElementById('res-grade').innerText = getGradeName(winner.grade);
         document.getElementById('res-name').innerText = winner.name;
         card.style.display = 'flex';
-
-        confetti({
-            particleCount: 200, spread: 100, origin: { y: 0.6 },
-            colors: ['#00d2ff', '#0052ff', '#ffffff']
-        });
-
-        if (history.length % 3 === 0) {
-            document.getElementById('booth-btn').style.display = 'block';
-        }
+        confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, colors: ['#00d2ff', '#ffffff'] });
+        if (history.length % 3 === 0) document.getElementById('booth-btn').style.display = 'block';
     }
 
     function closeResult() {
         document.getElementById('result-card').style.display = 'none';
         document.getElementById('open-btn').style.visibility = 'visible';
+        document.getElementById('title-text').style.opacity = '1';
         const box = document.getElementById('box');
-        box.style.transform = "scale(1)";
-        box.style.opacity = "1";
-        box.style.animation = "none";
+        box.style.transform = "scale(1)"; box.style.opacity = "1";
     }
 
     function showPhotoBooth() {
         const booth = document.getElementById('photo-booth');
-        const last3 = history.slice(-3);
-        last3.forEach((p, i) => {
+        history.slice(-3).forEach((p, i) => {
             document.getElementById(`slot-${i}`).innerHTML = `
-                <div style="color:#00d2ff; font-size:24px;">${getGradeName(p.grade)}</div>
-                <div style="font-size:80px; font-weight:bold; margin:20px 0;">${p.name}</div>
-                <div style="color:#555;">${p.class}분임</div>
+                <div style="color:var(--primary-blue); font-size:1.8rem;">${getGradeName(p.grade)}</div>
+                <div style="font-size:5rem; font-weight:bold; margin:20px 0;">${p.name}</div>
+                <div style="font-size:1.4rem; color:#888;">${p.class}분임</div>
             `;
         });
         booth.style.display = 'flex';
     }
 
-    function hidePhotoBooth() {
-        document.getElementById('photo-booth').style.display = 'none';
-        document.getElementById('booth-btn').style.display = 'none';
-    }
-
-    function resetData() {
-        if(confirm("모든 데이터를 초기화할까요?")) {
-            participants = [...rawData];
-            history = [];
-            updateCounter();
-            location.reload();
-        }
-    }
+    function hidePhotoBooth() { document.getElementById('photo-booth').style.display = 'none'; document.getElementById('booth-btn').style.display = 'none'; }
+    function resetData() { if(confirm("데이터를 초기화하시겠습니까?")) location.reload(); }
 </script>
 
+<style>
+    @keyframes shake {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(-8deg); }
+        75% { transform: rotate(8deg); }
+        100% { transform: rotate(0deg); }
+    }
+</style>
 </body>
 </html>
-
-🛠️ 무엇이 바뀌었나요?
- * 배치 및 크기: 상자가 화면 중앙보다 약간 위로 올라갔으며, 기본 크기가 더 커졌습니다.
- * 슬로우 애니메이션: 텍스트가 뜨는 간격을 늘렸고(1.5s -> 2s), 마지막 상자가 커지는 구간을 5초 뒤로 설정하여 "누가 나올까?" 하는 긴장감을 더 길게 잡았습니다.
- * 세련된 섬광: 전체 화면이 확 밝아지기보다, 배경색이 서서히 밝아지다가 마지막에 짧은 찰나의 화이트 플래시가 터지도록 변경했습니다.
- * 피파 카드 느낌: 결과 카드의 배경에 어두운 네이비 그라데이션을 넣고, 이름 폰트 크기를 더 키워 '레전드 선수' 카드 같은 느낌을 줬습니다.
-이제 이 코드를 다시 깃허브에 넣고 돌려보세요! 훨씬 더 웅장한 느낌이 들 거예요. 완성된 페이지에서 한 번 테스트해보시고, 마지막으로 더 수정하고 싶은 부분이 있다면 말씀해 주세요!
