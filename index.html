@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>교제의 밤 행운권 추첨</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root {
             --primary-blue: #00d2ff;
             --deep-blue: #0045ff;
             --dark-bg: #030816;
+            --gold: #ffd700;
         }
 
         body {
@@ -20,51 +20,65 @@
             margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; height: 100vh;
         }
 
+        /* 메인 UI */
         .top-ui { position: absolute; top: 20px; width: 92%; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .main-title { position: absolute; top: 8%; font-size: 2.8rem; font-weight: 800; text-shadow: 0 0 15px var(--primary-blue); transition: opacity 0.5s; }
 
         #main-stage { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 15vh; }
 
-        #box {
-            font-size: 150px; cursor: pointer; z-index: 50;
-            filter: drop-shadow(0 0 20px var(--deep-blue));
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; 
-        }
+        #box { font-size: 150px; cursor: pointer; z-index: 50; filter: drop-shadow(0 0 20px var(--deep-blue)); transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
 
-        #popup-text {
-            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 9rem; font-weight: 900; color: white; text-shadow: 0 0 40px var(--primary-blue); opacity: 0; z-index: 5;
-        }
+        /* 섬광 효과: 부분적으로 약하게 */
+        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%); opacity: 0; pointer-events: none; z-index: 1500; }
 
+        /* 결과 카드 */
         #result-card {
             display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            width: 480px; height: 620px; background: linear-gradient(145deg, #001f4d, #000);
+            width: 480px; height: 550px; background: linear-gradient(145deg, #001f4d, #000);
             border: 3px solid var(--primary-blue); border-radius: 40px; box-shadow: 0 0 100px rgba(0, 210, 255, 0.6); z-index: 1000;
             flex-direction: column; justify-content: center; align-items: center;
         }
 
-        #res-name { font-size: 5.5rem; font-weight: 900; color: white; margin: 15px 0; text-shadow: 0 0 20px var(--primary-blue); }
-
-        /* 섬광 효과 수정: 부분적으로 약하게 (Opacity 조절) */
-        #flash { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%); 
-            opacity: 0; pointer-events: none; z-index: 1500; transition: opacity 0.1s;
+        /* ★ 포토부스(3분할 명단) 스타일 ★ */
+        #photo-booth {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; flex-direction: column; align-items: center;
         }
+
+        .garland { font-size: 3rem; margin-top: 50px; color: var(--gold); text-shadow: 0 0 20px var(--gold); font-weight: 900; }
+
+        .winner-grid {
+            display: flex; width: 90%; height: 60%; margin-top: 50px; gap: 20px;
+        }
+
+        .winner-slot {
+            flex: 1; background: rgba(255,255,255,0.05); border: 2px solid var(--primary-blue);
+            border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: inset 0 0 30px rgba(0, 210, 255, 0.2);
+        }
+
+        .slot-name { font-size: 4rem; font-weight: 900; margin: 20px 0; }
+        .slot-info { font-size: 1.5rem; color: var(--primary-blue); }
+
+        /* 우측 상단 포토부스 버튼 */
+        #booth-open-btn {
+            position: fixed; top: 20px; right: 20px; display: none;
+            background: var(--gold); color: black; border: none; padding: 10px 20px;
+            font-weight: bold; border-radius: 10px; cursor: pointer; z-index: 500;
+        }
+
+        /* 버튼들 */
+        .btn-main { background: var(--deep-blue); color: white; border: none; padding: 15px 50px; font-size: 1.5rem; border-radius: 50px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
         
-        .btn-main { background: var(--deep-blue); color: white; border: none; padding: 12px 40px; font-size: 1.3rem; border-radius: 50px; cursor: pointer; margin-top: 15px; transition: 0.3s; }
-        .btn-main:hover { transform: scale(1.05); background: var(--primary-blue); color: black; }
-        .btn-save { background: #27ae60; font-size: 1.1rem; }
+        #popup-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 9rem; font-weight: 900; color: white; opacity: 0; z-index: 5; }
 
-        @keyframes shake {
-            0% { transform: rotate(0deg); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } 100% { transform: rotate(0deg); }
-        }
+        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } 100% { transform: rotate(0deg); } }
     </style>
 </head>
 <body>
 
 <div id="flash"></div>
-<div class="main-title" id="title-text">교제의 밤 행운권 추첨</div>
+<button id="booth-open-btn" onclick="openBooth()">📸 포토부스 보기</button>
 
 <div class="top-ui">
     <button onclick="resetData()" style="background:none; border:none; color:#444; cursor:pointer;">데이터 초기화</button>
@@ -74,43 +88,41 @@
 <div id="main-stage">
     <div id="popup-text"></div>
     <div id="box" onclick="startDraw()">🎁</div>
-    <button class="btn-main" id="open-btn" onclick="startDraw()" style="font-size:1.5rem; padding:15px 50px;">추첨 시작!</button>
+    <button class="btn-main" id="open-btn" onclick="startDraw()">추첨 시작!</button>
 
     <div id="result-card">
         <div id="res-unit" style="color:var(--primary-blue); font-size: 1.8rem;"></div>
-        <div id="res-grade" style="margin:10px 0; font-size: 2.2rem;"></div>
-        <div id="res-name"></div>
-        <div style="font-size:1.4rem; color:#aaa; margin-bottom: 20px;">당첨을 축하합니다!</div>
-        <button onclick="saveAsImage()" class="btn-main btn-save">📸 결과 저장 (포토부스)</button>
-        <button onclick="closeResult()" class="btn-main">닫기</button>
+        <div id="res-grade" style="margin:15px 0; font-size: 2.2rem;"></div>
+        <div id="res-name" style="font-size: 5.5rem; font-weight: 900;"></div>
+        <button onclick="closeResult()" class="btn-main">확인</button>
     </div>
 </div>
 
+<div id="photo-booth">
+    <div class="garland">🎉 축하합니다! 당첨자 명단 🎉</div>
+    <div class="winner-grid" id="winner-grid">
+        </div>
+    <button class="btn-main" onclick="closeBooth()" style="margin-top: 50px; background: #444;">추첨 화면으로 돌아가기</button>
+</div>
+
 <script>
-    // 명단 데이터 (이곳에 복사해서 넣으세요)
-    const rawData = [
-  { "grade": 6, "class": 1, "name": "김지성" },  { "grade": 4, "class": 1, "name": "김승하" },  { "grade": 4, "class": 1, "name": "김유하" },  { "grade": 4, "class": 1, "name": "박효진" },
-  { "grade": 3, "class": 1, "name": "김단비" },  { "grade": 3, "class": 1, "name": "김태건" },  { "grade": 3, "class": 1, "name": "정윤서" },  { "grade": 2, "class": 1, "name": "김윤서" },
-  { "grade": 2, "class": 1, "name": "배경은" },  { "grade": 2, "class": 1, "name": "최시원" },  { "grade": 2, "class": 1, "name": "장도원" },  { "grade": 1, "class": 1, "name": "권혜아" },
-  { "grade": 1, "class": 1, "name": "유채윤" },  { "grade": 1, "class": 1, "name": "윤소명" },  { "grade": 1, "class": 1, "name": "이진서" },  { "grade": 1, "class": 1, "name": "임채하" },
-  { "grade": 1, "class": 1, "name": "정진주" },
+    const rawData = [{"grade":6,"class":1,"name":"김지성"},{"grade":4,"class":1,"name":"김승하"},{"grade":4,"class":1,"name":"김유하"},{"grade":4,"class":1,"name":"박효진"},{"grade":3,"class":1,"name":"김단비"},
+                     {"grade":3,"class":1,"name":"김태건"},{"grade":3,"class":1,"name":"정윤서"},{"grade":2,"class":1,"name":"김윤서"},{"grade":2,"class":1,"name":"배경은"},{"grade":2,"class":1,"name":"최시원"},
+                     {"grade":2,"class":1,"name":"장도원"},{"grade":1,"class":1,"name":"권혜아"},{"grade":1,"class":1,"name":"유채윤"},{"grade":1,"class":1,"name":"윤소명"},{"grade":1,"class":1,"name":"이진서"},
+                     {"grade":1,"class":1,"name":"임채하"},{"grade":1,"class":1,"name":"정진주"},{"grade":6,"class":2,"name":"김재형"},{"grade":4,"class":2,"name":"강효빈"},{"grade":4,"class":2,"name":"문유건"},
+                     {"grade":4,"class":2,"name":"윤소현"},{"grade":2,"class":2,"name":"김서진"},{"grade":2,"class":2,"name":"박유빈"},{"grade":1,"class":2,"name":"공예은"},{"grade":1,"class":2,"name":"문승윤"},
+                     {"grade":1,"class":2,"name":"성하연"},{"grade":6,"class":3,"name":"김주영"},{"grade":6,"class":3,"name":"이준연"},{"grade":4,"class":3,"name":"강민혁"},{"grade":4,"class":3,"name":"권준영"},
+                     {"grade":4,"class":3,"name":"성호연"},{"grade":4,"class":3,"name":"정진양"},{"grade":3,"class":3,"name":"엄다애"},{"grade":3,"class":3,"name":"이시현"},{"grade":2,"class":3,"name":"배유찬"},
+                     {"grade":2,"class":3,"name":"서하린"},{"grade":2,"class":3,"name":"박하진"},{"grade":1,"class":3,"name":"강수영"},{"grade":1,"class":3,"name":"권서윤"},{"grade":1,"class":3,"name":"김지민"},
+                     {"grade":1,"class":3,"name":"심민하"},{"grade":1,"class":3,"name":"하영진"},{"grade":4,"class":4,"name":"문성원"},{"grade":4,"class":4,"name":"손승현"},{"grade":4,"class":4,"name":"임효린"},
+                     {"grade":3,"class":4,"name":"양윤슬"},{"grade":3,"class":4,"name":"이서린"},{"grade":3,"class":4,"name":"채준하"},{"grade":2,"class":4,"name":"김승주"},{"grade":2,"class":4,"name":"정세양"},
+                     {"grade":2,"class":4,"name":"신서아"},{"grade":2,"class":4,"name":"정시환"},{"grade":1,"class":4,"name":"권예은"},{"grade":1,"class":4,"name":"김가을"},{"grade":1,"class":4,"name":"서하진"},
+                     {"grade":1,"class":4,"name":"손주은"},{"grade":1,"class":4,"name":"이로휘"}]
 
-  { "grade": 6, "class": 2, "name": "김재형" },  { "grade": 4, "class": 2, "name": "강효빈" },  { "grade": 4, "class": 2, "name": "문유건" },  { "grade": 4, "class": 2, "name": "윤소현" },
-  { "grade": 2, "class": 2, "name": "김서진" },  { "grade": 2, "class": 2, "name": "박유빈" },  { "grade": 1, "class": 2, "name": "공예은" },  { "grade": 1, "class": 2, "name": "문승윤" },
-  { "grade": 1, "class": 2, "name": "성하연" },
-
-  { "grade": 6, "class": 3, "name": "김주영" },  { "grade": 6, "class": 3, "name": "이준연" },  { "grade": 4, "class": 3, "name": "강민혁" },  { "grade": 4, "class": 3, "name": "권준영" },
-  { "grade": 4, "class": 3, "name": "성호연" },  { "grade": 4, "class": 3, "name": "정진양" },  { "grade": 3, "class": 3, "name": "엄다애" },  { "grade": 3, "class": 3, "name": "이시현" },
-  { "grade": 2, "class": 3, "name": "배유찬" },  { "grade": 2, "class": 3, "name": "서하린" },  { "grade": 2, "class": 3, "name": "박하진" },  { "grade": 1, "class": 3, "name": "강수영" },
-  { "grade": 1, "class": 3, "name": "권서윤" },  { "grade": 1, "class": 3, "name": "김지민" },  { "grade": 1, "class": 3, "name": "심민하" },  { "grade": 1, "class": 3, "name": "하영진" },
-
-  { "grade": 4, "class": 4, "name": "문성원" },  { "grade": 4, "class": 4, "name": "손승현" },  { "grade": 4, "class": 4, "name": "임효린" },  { "grade": 3, "class": 4, "name": "양윤슬" },
-  { "grade": 3, "class": 4, "name": "이서린" },  { "grade": 3, "class": 4, "name": "채준하" },  { "grade": 2, "class": 4, "name": "김승주" },  { "grade": 2, "class": 4, "name": "정세양" },
-  { "grade": 2, "class": 4, "name": "신서아" },  { "grade": 2, "class": 4, "name": "정시환" },  { "grade": 1, "class": 4, "name": "권예은" },  { "grade": 1, "class": 4, "name": "김가을" },
-  { "grade": 1, "class": 4, "name": "서하진" },  { "grade": 1, "class": 4, "name": "손주은" },  { "grade": 1, "class": 4, "name": "이로휘" }
-    ];
 
     let participants = [...rawData];
+    let recentWinners = []; // 최근 당첨자 3명을 저장
+    
     const sndDrum = new Audio('drum.mp3');
     const sndFanfare = new Audio('fanfare.mp3');
 
@@ -120,23 +132,20 @@
 
     function startDraw() {
         if (participants.length === 0) return alert("추첨 완료!");
-        if (document.getElementById('result-card').style.display === 'flex') return;
-
-        // 드럼: 1초 후에 한 번만 재생
-        sndDrum.loop = false;
-        setTimeout(() => {
-            sndDrum.currentTime = 0;
-            sndDrum.play();
-        }, 1000);
+        
+        // 1초 뒤 드럼 소리 한 번만
+        setTimeout(() => { sndDrum.currentTime = 0; sndDrum.play(); }, 1000);
 
         document.getElementById('open-btn').style.visibility = 'hidden';
-        document.getElementById('title-text').style.opacity = '0.2';
-
         const winner = participants.splice(Math.floor(Math.random() * participants.length), 1)[0];
+        
+        // 최근 당첨자 명단에 추가 (최대 3명 유지)
+        recentWinners.push(winner);
+        if (recentWinners.length > 3) recentWinners.shift();
+
         const box = document.getElementById('box');
         box.style.animation = "shake 0.25s infinite"; 
 
-        // 글자 속도 가독성 있게 (2.5초 애니메이션)
         setTimeout(() => showStep(`${winner.class}분임`), 800);
         setTimeout(() => showStep(getGradeName(winner.grade)), 2300);
 
@@ -144,19 +153,15 @@
             box.style.animation = "none"; 
             setTimeout(() => {
                 box.style.transform = "translateY(-10vh) scale(2.0)"; 
-                
                 setTimeout(() => {
                     const flash = document.getElementById('flash');
-                    // 섬광 효과: 0.5 정도로 약하게 번쩍임
                     flash.style.opacity = "0.5"; 
-                    
                     sndFanfare.play();
-
                     setTimeout(() => {
                         flash.style.opacity = "0";
                         box.style.opacity = "0";
                         showResult(winner);
-                    }, 300); // 번쩍이는 시간 약간 조절
+                    }, 200);
                 }, 1000); 
             }, 50);
         }, 4000);
@@ -173,39 +178,49 @@
     }
 
     function showResult(winner) {
-        const card = document.getElementById('result-card');
         document.getElementById('res-unit').innerText = `${winner.class}분임`;
         document.getElementById('res-grade').innerText = getGradeName(winner.grade);
         document.getElementById('res-name').innerText = winner.name;
-        card.style.display = 'flex';
+        document.getElementById('result-card').style.display = 'flex';
         
-        // 쌍폭죽 연출
-        confetti({ particleCount: 180, angle: 60, spread: 80, origin: { x: 0, y: 0.8 } });
-        confetti({ particleCount: 180, angle: 120, spread: 80, origin: { x: 1, y: 0.8 } });
+        confetti({ particleCount: 150, angle: 60, spread: 80, origin: { x: 0, y: 0.8 } });
+        confetti({ particleCount: 150, angle: 120, spread: 80, origin: { x: 1, y: 0.8 } });
+
+        // 3명이 채워지면 우측 상단 버튼 노출
+        if (recentWinners.length === 3) {
+            document.getElementById('booth-open-btn').style.display = 'block';
+        }
     }
 
-    function saveAsImage() {
-        const card = document.getElementById('result-card');
-        const name = document.getElementById('res-name').innerText;
-        const buttons = card.querySelectorAll('button');
-        buttons.forEach(b => b.style.display = 'none');
-
-        html2canvas(card, { backgroundColor: '#000', borderRadius: 40 }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `교제의밤_당첨_${name}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-            buttons.forEach(b => b.style.display = 'block');
+    function openBooth() {
+        const grid = document.getElementById('winner-grid');
+        grid.innerHTML = ''; // 초기화
+        
+        recentWinners.forEach(w => {
+            const slot = document.createElement('div');
+            slot.className = 'winner-slot';
+            slot.innerHTML = `
+                <div class="slot-info">${getGradeName(w.grade)} | ${w.class}분임</div>
+                <div class="slot-name">${w.name}</div>
+            `;
+            grid.appendChild(slot);
         });
+
+        document.getElementById('photo-booth').style.display = 'flex';
+    }
+
+    function closeBooth() {
+        document.getElementById('photo-booth').style.display = 'none';
+        // 3명을 다 확인했으니 명단 비우기 (새로운 3명을 위해)
+        recentWinners = [];
+        document.getElementById('booth-open-btn').style.display = 'none';
     }
 
     function closeResult() {
         document.getElementById('result-card').style.display = 'none';
         document.getElementById('open-btn').style.visibility = 'visible';
-        document.getElementById('title-text').style.opacity = '1';
-        const box = document.getElementById('box');
-        box.style.transform = "scale(1)"; 
-        box.style.opacity = "1";
+        document.getElementById('box').style.transform = "scale(1)"; 
+        document.getElementById('box').style.opacity = "1";
         updateCounter();
     }
 
