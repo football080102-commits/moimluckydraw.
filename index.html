@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Lucky Draw v2</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #00d2ff;
+            --deep-blue: #0045ff;
+            --dark-bg: #030816;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            background-image: radial-gradient(circle at center, #0a1931 0%, #030816 100%);
+            color: white;
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 상단 레이아웃 */
+        .top-ui {
+            position: absolute;
+            top: 30px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .btn-sub {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #aaa;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* 메인 상자 배치 (중앙보다 약간 위) */
+        #main-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 중앙 배치 후 margin으로 조절 */
+            align-items: center;
+            width: 100%;
+            margin-top: -50px; 
+        }
+
+        #box-container {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        #box {
+            font-size: 180px; /* 크기 키움 */
+            filter: drop-shadow(0 0 30px var(--deep-blue));
+            cursor: pointer;
+            transition: all 1.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* 단계별 텍스트 애니메이션 (슬로우) */
+        #popup-text {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 90px;
+            font-weight: 900;
+            color: var(--primary-blue);
+            text-shadow: 0 0 20px var(--deep-blue), 0 0 40px white;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 분위기 반전용 오버레이 (부분 암전/명전) */
+        #ambience {
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+            transition: opacity 0.8s ease;
+        }
+
+        /* 결과 카드 디자인 */
+        #result-card {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            height: 500px;
+            background: linear-gradient(145deg, #001f4d, #000);
+            border: 3px solid var(--primary-blue);
+            border-radius: 30px;
+            box-shadow: 0 0 100px rgba(0, 210, 255, 0.4);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: cardEmerge 1.2s ease-out;
+        }
+
+        /* 애니메이션 정의 */
+        @keyframes cardEmerge {
+            0% { transform: translate(-50%, -50%) scale(0.5) rotateY(90deg); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1) rotateY(0deg); opacity: 1; }
+        }
+
+        @keyframes slowUp {
+            0% { transform: translate(-50%, 50%); opacity: 0; filter: blur(10px); }
+            30% { transform: translate(-50%, -50%); opacity: 1; filter: blur(0); }
+            70% { transform: translate(-50%, -50%); opacity: 1; }
+            100% { transform: translate(-50%, -150%); opacity: 0; }
+        }
+
+        .open-btn {
+            background: linear-gradient(to right, #0052ff, #00d2ff);
+            border: none;
+            padding: 20px 80px;
+            font-size: 28px;
+            font-weight: bold;
+            border-radius: 100px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 82, 255, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        /* 포토부스 */
+        #photo-booth {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 2000;
+        }
+        .photo-slot { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-right: 1px solid #111; }
+    </style>
+</head>
+<body>
+
+<div id="ambience"></div>
+
+<div class="top-ui">
+    <button class="btn-sub" onclick="resetData()">RESET</button>
+    <div id="counter" style="color: var(--primary-blue); font-weight: bold;">남은 인원: 0명</div>
+    <button id="booth-btn" style="display:none; background: #00d2ff; color: #000; font-weight: bold; border:none; padding:10px 20px; border-radius:5px;" onclick="showPhotoBooth()">📸 PHOTO BOOTH</button>
+</div>
+
+<div id="main-stage">
+    <div id="box-container">
+        <div id="box" onclick="startDraw()">🎁</div>
+        <div id="popup-text"></div>
+    </div>
+    <button class="open-btn" id="open-btn" onclick="startDraw()">OPEN PACK</button>
+
+    <div id="result-card">
+        <div id="res-unit" style="color: var(--primary-blue); font-size: 20px;"></div>
+        <div id="res-grade" style="font-size: 28px; margin: 10px 0;"></div>
+        <div id="res-name" style="font-size: 70px; font-weight: 900; text-shadow: 0 0 20px var(--primary-blue);"></div>
+        <div style="margin-top: 40px; letter-spacing: 5px; color: #aaa;">CONGRATULATIONS</div>
+        <button onclick="closeResult()" style="margin-top: 40px; background: none; border: 1px solid #555; color: #555;">NEXT DRAW</button>
+    </div>
+</div>
+
+<div id="photo-booth" onclick="hidePhotoBooth()" style="display:none; flex-direction: row;">
+    <div class="photo-slot" id="slot-0"></div>
+    <div class="photo-slot" id="slot-1"></div>
+    <div class="photo-slot" id="slot-2"></div>
+</div>
+
+<script>
+    // JSON 데이터 (학년 변환 로직 포함)
+    const rawData = [
+        { "grade": 6, "class": 1, "name": "김지성" }, { "grade": 4, "class": 1, "name": "김승하" }, { "grade": 4, "class": 1, "name": "김유하" }, { "grade": 4, "class": 1, "name": "박효진" },
+        { "grade": 3, "class": 1, "name": "김단비" }, { "grade": 3, "class": 1, "name": "김태건" }, { "grade": 3, "class": 1, "name": "정윤서" }, { "grade": 2, "class": 1, "name": "김윤서" },
+        { "grade": 2, "class": 1, "name": "배경은" }, { "grade": 2, "class": 1, "name": "최시원" }, { "grade": 2, "class": 1, "name": "장도원" }, { "grade": 1, "class": 1, "name": "권혜아" },
+        { "grade": 1, "class": 1, "name": "유채윤" }, { "grade": 1, "class": 1, "name": "윤소명" }, { "grade": 1, "class": 1, "name": "이진서" }, { "grade": 1, "class": 1, "name": "임채하" },
+        { "grade": 1, "class": 1, "name": "정진주" }, { "grade": 6, "class": 2, "name": "김재형" }, { "grade": 4, "class": 2, "name": "강효빈" }, { "grade": 4, "class": 2, "name": "문유건" },
+        { "grade": 4, "class": 2, "name": "윤소현" }, { "grade": 2, "class": 2, "name": "김서진" }, { "grade": 2, "class": 2, "name": "박유빈" }, { "grade": 1, "class": 2, "name": "공예은" },
+        { "grade": 1, "class": 2, "name": "문승윤" }, { "grade": 1, "class": 2, "name": "성하연" }, { "grade": 6, "class": 3, "name": "김주영" }, { "grade": 6, "class": 3, "name": "이준연" },
+        { "grade": 4, "class": 3, "name": "강민혁" }, { "grade": 4, "class": 3, "name": "권준영" }, { "grade": 4, "class": 3, "name": "성호연" }, { "grade": 4, "class": 3, "name": "정진양" },
+        { "grade": 3, "class": 3, "name": "엄다애" }, { "grade": 3, "class": 3, "name": "이시현" }, { "grade": 2, "class": 3, "name": "배유찬" }, { "grade": 2, "class": 3, "name": "서하린" },
+        { "grade": 2, "class": 3, "name": "박하진" }, { "grade": 1, "class": 3, "name": "강수영" }, { "grade": 1, "class": 3, "name": "권서윤" }, { "grade": 1, "class": 3, "name": "김지민" },
+        { "grade": 1, "class": 3, "name": "심민하" }, { "grade": 1, "class": 3, "name": "하영진" }, { "grade": 4, "class": 4, "name": "문성원" }, { "grade": 4, "class": 4, "name": "손승현" },
+        { "grade": 4, "class": 4, "name": "임효린" }, { "grade": 3, "class": 4, "name": "양윤슬" }, { "grade": 3, "class": 4, "name": "이서린" }, { "grade": 3, "class": 4, "name": "채준하" },
+        { "grade": 2, "class": 4, "name": "김승주" }, { "grade": 2, "class": 4, "name": "정세양" }, { "grade": 2, "class": 4, "name": "신서아" }, { "grade": 2, "class": 4, "name": "정시환" },
+        { "grade": 1, "class": 4, "name": "권예은" }, { "grade": 1, "class": 4, "name": "김가을" }, { "grade": 1, "class": 4, "name": "서하진" }, { "grade": 1, "class": 4, "name": "손주은" },
+        { "grade": 1, "class": 4, "name": "이로휘" }
+    ];
+
+    let participants = [...rawData];
+    let history = [];
+
+    function getGradeName(g) {
+        return g <= 3 ? `중학교 ${g}학년` : `고등학교 ${g-3}학년`;
+    }
+
+    function updateCounter() {
+        document.getElementById('counter').innerText = `READY: ${participants.length}`;
+    }
+    updateCounter();
+
+    function startDraw() {
+        if (participants.length === 0) return;
+        
+        const openBtn = document.getElementById('open-btn');
+        openBtn.style.visibility = 'hidden';
+
+        const winnerIdx = Math.floor(Math.random() * participants.length);
+        const winner = participants.splice(winnerIdx, 1)[0];
+        history.push(winner);
+        updateCounter();
+
+        const box = document.getElementById('box');
+        const ambience = document.getElementById('ambience');
+
+        // 연출 시작
+        box.style.animation = "shake 0.3s infinite";
+        
+        // 1단계: 분임 (2초 뒤)
+        setTimeout(() => showText(`${winner.class} 분임`), 1000);
+        
+        // 2단계: 학년 (4초 뒤 - 더 느리게)
+        setTimeout(() => showText(getGradeName(winner.grade)), 3000);
+
+        // 3단계: 피날레 빌드업
+        setTimeout(() => {
+            box.style.transform = "scale(4)";
+            ambience.style.opacity = "0.7"; // 화면이 점점 밝아짐
+            
+            setTimeout(() => {
+                ambience.style.background = "white";
+                ambience.style.opacity = "1"; // 순간 섬광
+                
+                setTimeout(() => {
+                    ambience.style.opacity = "0";
+                    box.style.opacity = "0";
+                    showResultCard(winner);
+                }, 400);
+            }, 1500);
+        }, 5000);
+    }
+
+    function showText(txt) {
+        const el = document.getElementById('popup-text');
+        el.innerText = txt;
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = 'slowUp 2s forwards';
+    }
+
+    function showResultCard(winner) {
+        const card = document.getElementById('result-card');
+        document.getElementById('res-unit').innerText = `${winner.class} UNIT`;
+        document.getElementById('res-grade').innerText = getGradeName(winner.grade);
+        document.getElementById('res-name').innerText = winner.name;
+        card.style.display = 'flex';
+
+        confetti({
+            particleCount: 200, spread: 100, origin: { y: 0.6 },
+            colors: ['#00d2ff', '#0052ff', '#ffffff']
+        });
+
+        if (history.length % 3 === 0) {
+            document.getElementById('booth-btn').style.display = 'block';
+        }
+    }
+
+    function closeResult() {
+        document.getElementById('result-card').style.display = 'none';
+        document.getElementById('open-btn').style.visibility = 'visible';
+        const box = document.getElementById('box');
+        box.style.transform = "scale(1)";
+        box.style.opacity = "1";
+        box.style.animation = "none";
+    }
+
+    function showPhotoBooth() {
+        const booth = document.getElementById('photo-booth');
+        const last3 = history.slice(-3);
+        last3.forEach((p, i) => {
+            document.getElementById(`slot-${i}`).innerHTML = `
+                <div style="color:#00d2ff; font-size:24px;">${getGradeName(p.grade)}</div>
+                <div style="font-size:80px; font-weight:bold; margin:20px 0;">${p.name}</div>
+                <div style="color:#555;">${p.class}분임</div>
+            `;
+        });
+        booth.style.display = 'flex';
+    }
+
+    function hidePhotoBooth() {
+        document.getElementById('photo-booth').style.display = 'none';
+        document.getElementById('booth-btn').style.display = 'none';
+    }
+
+    function resetData() {
+        if(confirm("모든 데이터를 초기화할까요?")) {
+            participants = [...rawData];
+            history = [];
+            updateCounter();
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
+
+🛠️ 무엇이 바뀌었나요?
+ * 배치 및 크기: 상자가 화면 중앙보다 약간 위로 올라갔으며, 기본 크기가 더 커졌습니다.
+ * 슬로우 애니메이션: 텍스트가 뜨는 간격을 늘렸고(1.5s -> 2s), 마지막 상자가 커지는 구간을 5초 뒤로 설정하여 "누가 나올까?" 하는 긴장감을 더 길게 잡았습니다.
+ * 세련된 섬광: 전체 화면이 확 밝아지기보다, 배경색이 서서히 밝아지다가 마지막에 짧은 찰나의 화이트 플래시가 터지도록 변경했습니다.
+ * 피파 카드 느낌: 결과 카드의 배경에 어두운 네이비 그라데이션을 넣고, 이름 폰트 크기를 더 키워 '레전드 선수' 카드 같은 느낌을 줬습니다.
+이제 이 코드를 다시 깃허브에 넣고 돌려보세요! 훨씬 더 웅장한 느낌이 들 거예요. 완성된 페이지에서 한 번 테스트해보시고, 마지막으로 더 수정하고 싶은 부분이 있다면 말씀해 주세요!
